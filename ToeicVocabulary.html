@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>單字記憶特訓班 (Pro版)</title>
+<title>單字記憶特訓班 (Pro+ 慣用語版)</title>
 <style>
     :root {
-        --primary-color: #6a8caf;
+        --primary-color: #6a8caf; /* 莫蘭迪藍 */
         --bg-color: #f7f9fc;
-        --card-height: 280px;
+        --card-height: 320px; /* 稍微加高以容納慣用語 */
         --status-hard: #e53e3e;   /* 紅 */
         --status-medium: #d69e2e; /* 黃 */
         --status-easy: #38a169;   /* 綠 */
@@ -44,11 +44,8 @@
 
     header h2 { margin: 0; color: var(--primary-color); font-size: 1.2rem; }
     
-    .filter-bar {
-        display: flex;
-        gap: 10px;
-    }
-
+    .filter-bar { display: flex; gap: 10px; }
+    
     select.mode-selector {
         padding: 8px;
         border-radius: 8px;
@@ -93,12 +90,11 @@
     .word-item:hover { background-color: #f7fafc; }
     .word-item.active { background-color: #ebf8ff; border-left-color: var(--primary-color); border-color: #bee3f8; }
 
-    /* 列表中的狀態小圓點 */
     .status-dot {
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        background-color: #cbd5e0; /* 預設灰 */
+        background-color: #cbd5e0;
         display: inline-block;
         margin-right: 8px;
     }
@@ -117,7 +113,6 @@
         position: relative;
     }
 
-    /* 狀態回饋條 (在卡片上方顯示當前狀態) */
     .status-feedback {
         margin-bottom: 10px;
         font-size: 0.9rem;
@@ -167,11 +162,28 @@
     .flip-card-front { background: linear-gradient(135deg, #6a8caf 0%, #5a7c9f 100%); color: white; }
     .flip-card-back { background-color: white; color: #2d3748; transform: rotateY(180deg); border: 1px solid #e2e8f0; }
 
-    .main-word { font-size: 2rem; font-weight: 700; margin-bottom: 5px; }
-    .meaning { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 10px; }
-    .sentence { font-size: 1rem; color: #666; font-style: italic; border-top: 1px solid #eee; padding-top: 15px; width: 100%; }
+    /* 字卡樣式 */
+    .main-word { font-size: 2.2rem; font-weight: 700; margin-bottom: 5px; }
+    .pos-tag { font-size: 1rem; opacity: 0.9; margin-bottom: 20px; font-style: italic; background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 10px; }
+    
+    /* 新增：慣用語區塊 */
+    .phrase-box {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-top: 10px;
+        width: 90%;
+    }
+    .phrase-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; margin-bottom: 4px; }
+    .phrase-text { font-size: 1.1rem; font-weight: 600; color: #fff; }
 
-    /* --- Rating Buttons (評分按鈕) --- */
+    /* 背面樣式 */
+    .meaning { font-size: 1.6rem; font-weight: 700; color: var(--primary-color); margin-bottom: 10px; }
+    .sentence { font-size: 1.1rem; color: #555; line-height: 1.4; }
+    .phrase-translation { font-size: 0.9rem; color: #888; margin-top: 5px; }
+
+    /* --- Rating Buttons --- */
     .rating-area {
         display: flex;
         gap: 10px;
@@ -193,12 +205,11 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .rate-btn:active { transform: scale(0.95); }
-    
     .btn-hard { background-color: var(--status-hard); }
     .btn-medium { background-color: var(--status-medium); }
     .btn-easy { background-color: var(--status-easy); }
 
-    /* Navigation Buttons */
+    /* Navigation */
     .nav-buttons {
         display: flex;
         gap: 20px;
@@ -212,6 +223,8 @@
         padding: 10px;
         border-radius: 30px;
         cursor: pointer;
+        font-size: 1rem;
+        color: var(--primary-color);
     }
 
     /* RWD */
@@ -219,7 +232,9 @@
         .main-container { flex-direction: column; }
         .card-panel { order: 1; padding: 10px; border-bottom: 1px solid #ddd; flex: 0 0 auto; }
         .list-panel { order: 2; width: 100%; flex: 1; }
-        .flip-card { height: 240px; }
+        .flip-card { height: 280px; }
+        .main-word { font-size: 1.8rem; }
+        .phrase-text { font-size: 1rem; }
     }
 </style>
 </head>
@@ -227,20 +242,21 @@
 
 <header>
     <div class="header-top">
-        <h2>單字特訓 Pro</h2>
+        <h2>單字特訓 Pro+</h2>
         <div style="font-size:0.9rem; color:#666;" id="progressText">0/0</div>
     </div>
     <div class="filter-bar">
         <select class="mode-selector" id="modeSelect" onchange="changeMode()">
-            <option value="All">📚 全部單字</option>
-            <option value="Day 01">📱 Day 01：求職篇</option>
-            <option value="Day 02">🏢 Day 02：規矩篇</option>
+            <option value="All">📚 全部 (Day 01-04)</option>
+            <option value="Day 01">📱 Day 01：求職</option>
+            <option value="Day 02">🏢 Day 02：規矩</option>
+            <option value="Day 03">💼 Day 03：商務</option>
+            <option value="Day 04">📂 Day 04：業務</option>
             <option disabled>──────────</option>
-            <option value="Review-Hard">🔴 只複習「不熟」的字</option>
-            <option value="Review-Medium">🟡 只複習「普通」的字</option>
-            <option value="Review-Review">🔥 複習「不熟 + 普通」</option>
+            <option value="Review-Hard">🔴 只複習「不熟」</option>
+            <option value="Review-Medium">🟡 只複習「普通」</option>
         </select>
-        <button onclick="resetProgress()" style="padding:0 10px; border:1px solid #ccc; border-radius:8px; background:#fff;">重置</button>
+        <button onclick="resetProgress()" style="padding:0 12px; border:1px solid #ccc; border-radius:8px; background:#fff;">重置</button>
     </div>
 </header>
 
@@ -254,12 +270,18 @@
             <div class="flip-card-inner">
                 <div class="flip-card-front">
                     <div class="main-word" id="cardWord">Word</div>
-                    <div style="opacity:0.8" id="cardPos">n.</div>
-                    <div style="font-size:0.8rem; margin-top:20px; opacity:0.6;">點擊翻面</div>
+                    <div class="pos-tag" id="cardPos">pos.</div>
+                    
+                    <div class="phrase-box">
+                        <div class="phrase-label">Phrase</div>
+                        <div class="phrase-text" id="cardPhrase">phrase here</div>
+                    </div>
+                    
+                    <div style="font-size:0.8rem; margin-top:15px; opacity:0.6;">點擊翻面</div>
                 </div>
                 <div class="flip-card-back">
-                    <div class="meaning" id="cardMeaning">意思</div>
-                    <div class="sentence" id="cardSentence">例句</div>
+                    <div class="meaning" id="cardMeaning">中文解釋</div>
+                    <div class="phrase-translation" id="cardPhraseTrans">(慣用語中文)</div>
                 </div>
             </div>
         </div>
@@ -271,103 +293,191 @@
         </div>
 
         <div class="nav-buttons">
-            <button class="nav-btn" onclick="changeCard(-1)">← 上一個</button>
-            <button class="nav-btn" onclick="changeCard(1)">下一個 →</button>
+            <button class="nav-btn" onclick="changeCard(-1)">← Prev</button>
+            <button class="nav-btn" onclick="changeCard(1)">Next →</button>
         </div>
     </div>
 </div>
 
 <script>
     // ================= DATA =================
+    // 格式：phrase = 英文慣用語, phraseTrans = 慣用語中文
     const fullVocabData = [
-        // --- Day 01 ---
-        { tag: "Day 01", word: "Resume", pos: "n.", meaning: "履歷表", sentence: "Submit a resume to apply for the job." },
-        { tag: "Day 01", word: "Opening", pos: "n.", meaning: "職缺、空缺", sentence: "There are several job openings now." },
-        { tag: "Day 01", word: "Applicant", pos: "n.", meaning: "申請人", sentence: "Applicants are required to provide ID." },
-        { tag: "Day 01", word: "Requirement", pos: "n.", meaning: "必要條件", sentence: "You must meet all the requirements." },
-        { tag: "Day 01", word: "Meet", pos: "v.", meaning: "滿足、符合", sentence: "Does your skill set meet the needs?" },
-        { tag: "Day 01", word: "Qualified", pos: "adj.", meaning: "有資格的", sentence: "She is highly qualified for the position." },
-        { tag: "Day 01", word: "Candidate", pos: "n.", meaning: "候選人", sentence: "We selected three candidates." },
-        { tag: "Day 01", word: "Confidence", pos: "n.", meaning: "信心", sentence: "Show confidence during the interview." },
-        { tag: "Day 01", word: "Highly", pos: "adv.", meaning: "很、非常", sentence: "He is a highly respected manager." },
-        { tag: "Day 01", word: "Professional", pos: "adj.", meaning: "專業的", sentence: "Please wear professional attire." },
-        { tag: "Day 01", word: "Interview", pos: "n./v.", meaning: "面試", sentence: "We will hold interviews next week." },
-        { tag: "Day 01", word: "Hire", pos: "v.", meaning: "雇用", sentence: "They plan to hire new employees." },
-        { tag: "Day 01", word: "Training", pos: "n.", meaning: "訓練", sentence: "The company provides on-the-job training." },
-        { tag: "Day 01", word: "Reference", pos: "n.", meaning: "推薦信、參考", sentence: "Please attach a reference letter." },
-        { tag: "Day 01", word: "Position", pos: "n.", meaning: "職位", sentence: "I applied for the advertised position." },
-        { tag: "Day 01", word: "Achievement", pos: "n.", meaning: "成就", sentence: "List your achievements on the resume." },
-        { tag: "Day 01", word: "Impressed", pos: "adj.", meaning: "印象深刻的", sentence: "I was impressed by his skills." },
-        { tag: "Day 01", word: "Excellent", pos: "adj.", meaning: "優秀的", sentence: "She has excellent managerial skills." },
-        { tag: "Day 01", word: "Eligible", pos: "adj.", meaning: "有資格的", sentence: "Who is eligible for the bonus?" },
-        { tag: "Day 01", word: "Identify", pos: "v.", meaning: "識別、認出", sentence: "The badge makes you easy to identify." },
-        { tag: "Day 01", word: "Associate", pos: "v.", meaning: "使有關聯", sentence: "The brand is associated with quality." },
-        { tag: "Day 01", word: "Condition", pos: "n.", meaning: "條件", sentence: "Terms and conditions of employment." },
-        { tag: "Day 01", word: "Employment", pos: "n.", meaning: "雇用", sentence: "Looking for employment opportunities." },
-        { tag: "Day 01", word: "Lack", pos: "v./n.", meaning: "缺乏", sentence: "He lacks the necessary experience." },
-        { tag: "Day 01", word: "Managerial", pos: "adj.", meaning: "管理的", sentence: "He is seeking a managerial position." },
-        { tag: "Day 01", word: "Diligent", pos: "adj.", meaning: "勤勉的", sentence: "Diligent workers are rewarded." },
-        { tag: "Day 01", word: "Familiar", pos: "adj.", meaning: "熟悉的", sentence: "Become familiar with the rules." },
-        { tag: "Day 01", word: "Proficiency", pos: "n.", meaning: "精通", sentence: "Show proof of proficiency in English." },
-        { tag: "Day 01", word: "Prospective", pos: "adj.", meaning: "預期的", sentence: "Meeting with prospective clients." },
-        { tag: "Day 01", word: "Appeal", pos: "v.", meaning: "吸引", sentence: "The offer appeals to the staff." },
-        { tag: "Day 01", word: "Specialize", pos: "v.", meaning: "專攻", sentence: "We specialize in web design." },
-        { tag: "Day 01", word: "Apprehensive", pos: "adj.", meaning: "憂慮的", sentence: "I feel apprehensive about the test." },
-        { tag: "Day 01", word: "Consultant", pos: "n.", meaning: "顧問", sentence: "We hired a design consultant." },
-        { tag: "Day 01", word: "Entitle", pos: "v.", meaning: "給...權利", sentence: "You are entitled to a refund." },
-        { tag: "Day 01", word: "Degree", pos: "n.", meaning: "學位", sentence: "He has a bachelor's degree." },
-        { tag: "Day 01", word: "Payroll", pos: "n.", meaning: "薪水帳冊", sentence: "You are now on the payroll." },
-        { tag: "Day 01", word: "Recruit", pos: "v.", meaning: "招募", sentence: "They recruit promising graduates." },
-        { tag: "Day 01", word: "Certification", pos: "n.", meaning: "證照", sentence: "Obtain certification before working." },
-        { tag: "Day 01", word: "Occupation", pos: "n.", meaning: "職業", sentence: "It is a challenging occupation." },
-        { tag: "Day 01", word: "Wage", pos: "n.", meaning: "工資", sentence: "Workers want to earn higher wages." },
-        // --- Day 02 ---
-        { tag: "Day 02", word: "Attire", pos: "n.", meaning: "服裝", sentence: "Wear professional business attire." },
-        { tag: "Day 02", word: "Code", pos: "n.", meaning: "規範", sentence: "Follow the company dress code." },
-        { tag: "Day 02", word: "Concern", pos: "n.", meaning: "擔憂", sentence: "Voice your concerns to the manager." },
-        { tag: "Day 02", word: "Policy", pos: "n.", meaning: "政策", sentence: "Read the insurance policy carefully." },
-        { tag: "Day 02", word: "Comply", pos: "v.", meaning: "遵守", sentence: "You must comply with the rules." },
-        { tag: "Day 02", word: "Regulation", pos: "n.", meaning: "規定", sentence: "Safety regulations are strict here." },
-        { tag: "Day 02", word: "Exception", pos: "n.", meaning: "例外", sentence: "We cannot make exceptions for anyone." },
-        { tag: "Day 02", word: "Adhere", pos: "v.", meaning: "遵守", sentence: "Adhere to the safety guidelines." },
-        { tag: "Day 02", word: "Severely", pos: "adv.", meaning: "嚴格地", sentence: "Violators will be severely punished." },
-        { tag: "Day 02", word: "Refrain", pos: "v.", meaning: "克制", sentence: "Please refrain from smoking here." },
-        { tag: "Day 02", word: "Permission", pos: "n.", meaning: "許可", sentence: "Get permission before leaving early." },
-        { tag: "Day 02", word: "Access", pos: "n.", meaning: "進入權", sentence: "Only staff can gain access to the lab." },
-        { tag: "Day 02", word: "Thoroughly", pos: "adv.", meaning: "徹底地", sentence: "Read the contract thoroughly." },
-        { tag: "Day 02", word: "Revise", pos: "v.", meaning: "修訂", sentence: "The policies have been revised." },
-        { tag: "Day 02", word: "Approach", pos: "n.", meaning: "方法", sentence: "We take a strict approach to safety." },
-        { tag: "Day 02", word: "Approval", pos: "n.", meaning: "批准", sentence: "Obtain approval from your boss." },
-        { tag: "Day 02", word: "Form", pos: "n.", meaning: "形式", sentence: "A driver's license is a form of ID." },
-        { tag: "Day 02", word: "Immediately", pos: "adv.", meaning: "立即", sentence: "The rule is effective immediately." },
-        { tag: "Day 02", word: "Inspection", pos: "n.", meaning: "檢查", sentence: "Conduct a safety inspection." },
-        { tag: "Day 02", word: "Arrangement", pos: "n.", meaning: "安排", sentence: "Make arrangements for the meeting." },
-        { tag: "Day 02", word: "Procedure", pos: "n.", meaning: "程序", sentence: "Follow the standard procedure." },
-        { tag: "Day 02", word: "Negative", pos: "adj.", meaning: "負面的", sentence: "Avoid negative feedback." },
-        { tag: "Day 02", word: "Mandate", pos: "v.", meaning: "命令、授權", sentence: "The law mandates equal pay." },
-        { tag: "Day 02", word: "Effect", pos: "n.", meaning: "效力", sentence: "The law is currently in effect." },
-        { tag: "Day 02", word: "Drastically", pos: "adv.", meaning: "大幅地", sentence: "Prices increased drastically." },
-        { tag: "Day 02", word: "According to", pos: "phr.", meaning: "根據", sentence: "According to the new guidelines..." },
-        { tag: "Day 02", word: "Enable", pos: "v.", meaning: "使...能夠", sentence: "This tool enables us to work faster." },
-        { tag: "Day 02", word: "Standard", pos: "n.", meaning: "標準", sentence: "We meet high safety standards." },
-        { tag: "Day 02", word: "Constant", pos: "adj.", meaning: "持續的", sentence: "Constant noise can be annoying." },
-        { tag: "Day 02", word: "Act", pos: "n.", meaning: "法案", sentence: "Congress passed the new act." },
-        { tag: "Day 02", word: "Compensation", pos: "n.", meaning: "報酬", sentence: "Receive fair compensation for work." },
-        { tag: "Day 02", word: "Ban", pos: "n./v.", meaning: "禁止", sentence: "They placed a ban on cellphones." },
-        { tag: "Day 02", word: "Obligation", pos: "n.", meaning: "義務", sentence: "We have an obligation to pay tax." },
-        { tag: "Day 02", word: "Authorize", pos: "v.", meaning: "授權", sentence: "The payment was authorized." },
-        { tag: "Day 02", word: "Prohibit", pos: "v.", meaning: "禁止", sentence: "Smoking is prohibited here." },
-        { tag: "Day 02", word: "Abolish", pos: "v.", meaning: "廢除", sentence: "The old rule was abolished." },
-        { tag: "Day 02", word: "Enforce", pos: "v.", meaning: "執行", sentence: "Police enforce the traffic laws." },
-        { tag: "Day 02", word: "Habit", pos: "n.", meaning: "習慣", sentence: "Make punctuality a regular habit." },
-        { tag: "Day 02", word: "Legislation", pos: "n.", meaning: "立法", sentence: "Support the new legislation." },
-        { tag: "Day 02", word: "Restrict", pos: "v.", meaning: "限制", sentence: "Access is restricted to staff only." }
+        // --- Day 01: Job Hunting ---
+        { tag: "Day 01", word: "Resume", pos: "n.", meaning: "履歷表", phrase: "submit a resume", phraseTrans: "提交履歷表" },
+        { tag: "Day 01", word: "Opening", pos: "n.", meaning: "職缺、空缺", phrase: "job openings", phraseTrans: "工作職缺" },
+        { tag: "Day 01", word: "Applicant", pos: "n.", meaning: "申請人、應徵者", phrase: "applicants are required to...", phraseTrans: "申請人被要求..." },
+        { tag: "Day 01", word: "Requirement", pos: "n.", meaning: "必要條件", phrase: "meet all the requirements", phraseTrans: "符合所有要求" },
+        { tag: "Day 01", word: "Meet", pos: "v.", meaning: "滿足、符合", phrase: "meet requirements", phraseTrans: "符合要求" },
+        { tag: "Day 01", word: "Qualified", pos: "adj.", meaning: "有資格的、勝任的", phrase: "be qualified for", phraseTrans: "有資格擔任..." },
+        { tag: "Day 01", word: "Candidate", pos: "n.", meaning: "候選人", phrase: "five candidates will be selected", phraseTrans: "五位候選人將被選出" },
+        { tag: "Day 01", word: "Confidence", pos: "n.", meaning: "信心、自信", phrase: "show confidence in", phraseTrans: "對...展現信心" },
+        { tag: "Day 01", word: "Highly", pos: "adv.", meaning: "很、非常", phrase: "highly qualified", phraseTrans: "非常有資格/非常勝任" },
+        { tag: "Day 01", word: "Professional", pos: "adj.", meaning: "專業的、職業的", phrase: "professional photographer", phraseTrans: "專業攝影師" },
+        { tag: "Day 01", word: "Interview", pos: "n./v.", meaning: "面試", phrase: "hold interviews", phraseTrans: "舉辦面試" },
+        { tag: "Day 01", word: "Hire", pos: "v.", meaning: "雇用", phrase: "hire new employees", phraseTrans: "雇用新員工" },
+        { tag: "Day 01", word: "Training", pos: "n.", meaning: "訓練", phrase: "on-the-job training", phraseTrans: "在職訓練" },
+        { tag: "Day 01", word: "Reference", pos: "n.", meaning: "推薦信、參考", phrase: "reference letter", phraseTrans: "推薦信" },
+        { tag: "Day 01", word: "Position", pos: "n.", meaning: "職位", phrase: "advertised position", phraseTrans: "廣告徵才的職位" },
+        { tag: "Day 01", word: "Achievement", pos: "n.", meaning: "成就", phrase: "list your achievements", phraseTrans: "列出你的成就" },
+        { tag: "Day 01", word: "Impressed", pos: "adj.", meaning: "印象深刻的", phrase: "be impressed by", phraseTrans: "對...感到印象深刻" },
+        { tag: "Day 01", word: "Excellent", pos: "adj.", meaning: "優秀的", phrase: "excellent managerial skills", phraseTrans: "優秀的管理技巧" },
+        { tag: "Day 01", word: "Eligible", pos: "adj.", meaning: "有資格的", phrase: "be eligible for", phraseTrans: "有資格享有..." },
+        { tag: "Day 01", word: "Identify", pos: "v.", meaning: "識別、認出", phrase: "easy to identify", phraseTrans: "容易識別" },
+        { tag: "Day 01", word: "Associate", pos: "v.", meaning: "使有關聯", phrase: "be associated with", phraseTrans: "與...有關聯" },
+        { tag: "Day 01", word: "Condition", pos: "n.", meaning: "條件", phrase: "conditions of employment", phraseTrans: "雇用條件" },
+        { tag: "Day 01", word: "Employment", pos: "n.", meaning: "雇用", phrase: "employment opportunities", phraseTrans: "就業機會" },
+        { tag: "Day 01", word: "Lack", pos: "v./n.", meaning: "缺乏", phrase: "lack the ability", phraseTrans: "缺乏能力" },
+        { tag: "Day 01", word: "Managerial", pos: "adj.", meaning: "管理的", phrase: "managerial position", phraseTrans: "管理職位" },
+        { tag: "Day 01", word: "Diligent", pos: "adj.", meaning: "勤勉的", phrase: "diligent workers", phraseTrans: "勤勉的員工" },
+        { tag: "Day 01", word: "Familiar", pos: "adj.", meaning: "熟悉的", phrase: "become familiar with", phraseTrans: "變得熟悉..." },
+        { tag: "Day 01", word: "Proficiency", pos: "n.", meaning: "精通、熟練", phrase: "proof of proficiency", phraseTrans: "精通證明/能力證" },
+        { tag: "Day 01", word: "Prospective", pos: "adj.", meaning: "預期的、未來的", phrase: "prospective employees", phraseTrans: "準員工" },
+        { tag: "Day 01", word: "Appeal", pos: "v.", meaning: "吸引、引起興趣", phrase: "appeal to the staff", phraseTrans: "吸引員工" },
+        { tag: "Day 01", word: "Specialize", pos: "v.", meaning: "專攻、專門從事", phrase: "specialize in", phraseTrans: "專攻..." },
+        { tag: "Day 01", word: "Apprehensive", pos: "adj.", meaning: "憂慮的、擔心的", phrase: "feel apprehensive", phraseTrans: "感到憂慮" },
+        { tag: "Day 01", word: "Consultant", pos: "n.", meaning: "顧問", phrase: "design consultant", phraseTrans: "設計顧問" },
+        { tag: "Day 01", word: "Entitle", pos: "v.", meaning: "給...權利", phrase: "be entitled to", phraseTrans: "有權享有..." },
+        { tag: "Day 01", word: "Degree", pos: "n.", meaning: "學位", phrase: "bachelor's degree", phraseTrans: "學士學位" },
+        { tag: "Day 01", word: "Payroll", pos: "n.", meaning: "薪水帳冊、發薪名單", phrase: "be added to the payroll", phraseTrans: "被加入發薪名單" },
+        { tag: "Day 01", word: "Recruit", pos: "v.", meaning: "招募", phrase: "recruit promising graduates", phraseTrans: "招募有前途的畢業生" },
+        { tag: "Day 01", word: "Certification", pos: "n.", meaning: "證明、證照", phrase: "obtain certification", phraseTrans: "取得證照" },
+        { tag: "Day 01", word: "Occupation", pos: "n.", meaning: "職業", phrase: "challenging occupation", phraseTrans: "具挑戰性的職業" },
+        { tag: "Day 01", word: "Wage", pos: "n.", meaning: "工資、薪水", phrase: "earn higher wages", phraseTrans: "賺取較高工資" },
+
+        // --- Day 02: Office Rules ---
+        { tag: "Day 02", word: "Attire", pos: "n.", meaning: "服裝、著裝", phrase: "professional business attire", phraseTrans: "專業商務服裝" },
+        { tag: "Day 02", word: "Code", pos: "n.", meaning: "規範、慣例", phrase: "dress code", phraseTrans: "服裝儀容規定" },
+        { tag: "Day 02", word: "Concern", pos: "n.", meaning: "擔憂、問題", phrase: "voice concerns about", phraseTrans: "表達對...的擔憂" },
+        { tag: "Day 02", word: "Policy", pos: "n.", meaning: "政策、規定", phrase: "insurance policy", phraseTrans: "保險政策" },
+        { tag: "Day 02", word: "Comply", pos: "v.", meaning: "遵守", phrase: "comply with", phraseTrans: "遵守規則" },
+        { tag: "Day 02", word: "Regulation", pos: "n.", meaning: "規定", phrase: "regulations regarding...", phraseTrans: "關於...的規定" },
+        { tag: "Day 02", word: "Exception", pos: "n.", meaning: "例外", phrase: "make exceptions", phraseTrans: "破例/容許例外" },
+        { tag: "Day 02", word: "Adhere", pos: "v.", meaning: "堅持、遵守", phrase: "adhere to", phraseTrans: "遵守政策/規則" },
+        { tag: "Day 02", word: "Severely", pos: "adv.", meaning: "嚴格地、嚴重地", phrase: "be severely punished", phraseTrans: "受到嚴厲懲罰" },
+        { tag: "Day 02", word: "Refrain", pos: "v.", meaning: "克制、避免", phrase: "refrain from", phraseTrans: "避免做..." },
+        { tag: "Day 02", word: "Permission", pos: "n.", meaning: "許可", phrase: "give permission to", phraseTrans: "給予...許可" },
+        { tag: "Day 02", word: "Access", pos: "n.", meaning: "進入權、存取權", phrase: "gain access to", phraseTrans: "獲得...的權限" },
+        { tag: "Day 02", word: "Thoroughly", pos: "adv.", meaning: "徹底地", phrase: "read thoroughly", phraseTrans: "徹底閱讀" },
+        { tag: "Day 02", word: "Revise", pos: "v.", meaning: "修訂、修改", phrase: "policies have been revised", phraseTrans: "政策已被修訂" },
+        { tag: "Day 02", word: "Approach", pos: "n.", meaning: "方法、處理方式", phrase: "strict approach", phraseTrans: "嚴格的處理方式" },
+        { tag: "Day 02", word: "Approval", pos: "n.", meaning: "批准、認可", phrase: "obtain approval", phraseTrans: "獲得批准" },
+        { tag: "Day 02", word: "Form", pos: "n.", meaning: "種類、形式", phrase: "a form of identification", phraseTrans: "一種身分證明形式" },
+        { tag: "Day 02", word: "Immediately", pos: "adv.", meaning: "立即、馬上", phrase: "effective immediately", phraseTrans: "即刻生效" },
+        { tag: "Day 02", word: "Inspection", pos: "n.", meaning: "檢查、視察", phrase: "conduct an inspection", phraseTrans: "進行檢查" },
+        { tag: "Day 02", word: "Arrangement", pos: "n.", meaning: "安排、準備", phrase: "make arrangements for", phraseTrans: "為...做安排" },
+        { tag: "Day 02", word: "Procedure", pos: "n.", meaning: "程序、手續", phrase: "procedure for...", phraseTrans: "...的程序" },
+        { tag: "Day 02", word: "Negative", pos: "adj.", meaning: "負面的", phrase: "negative feedback", phraseTrans: "負面回饋" },
+        { tag: "Day 02", word: "Mandate", pos: "v.", meaning: "命令、授權", phrase: "mandate an increase", phraseTrans: "強制/批准增加" },
+        { tag: "Day 02", word: "Effect", pos: "n.", meaning: "效力、實施", phrase: "in effect", phraseTrans: "生效中、實施中" },
+        { tag: "Day 02", word: "Drastically", pos: "adv.", meaning: "大幅地、徹底地", phrase: "drastically increased", phraseTrans: "大幅增加" },
+        { tag: "Day 02", word: "According to", pos: "phr.", meaning: "根據", phrase: "according to the guidelines", phraseTrans: "根據指導方針" },
+        { tag: "Day 02", word: "Enable", pos: "v.", meaning: "使...能夠", phrase: "enable someone to...", phraseTrans: "使某人能夠..." },
+        { tag: "Day 02", word: "Standard", pos: "n.", meaning: "標準", phrase: "safety standards", phraseTrans: "安全標準" },
+        { tag: "Day 02", word: "Constant", pos: "adj.", meaning: "持續的、不斷的", phrase: "constant inquiries", phraseTrans: "不斷的詢問" },
+        { tag: "Day 02", word: "Act", pos: "n.", meaning: "法案、法令", phrase: "the new act", phraseTrans: "新法案" },
+        { tag: "Day 02", word: "Compensation", pos: "n.", meaning: "報酬、補償", phrase: "receive compensation", phraseTrans: "獲得報酬/補償" },
+        { tag: "Day 02", word: "Ban", pos: "n./v.", meaning: "禁止", phrase: "place a ban on", phraseTrans: "對...下達禁令" },
+        { tag: "Day 02", word: "Obligation", pos: "n.", meaning: "義務、責任", phrase: "have an obligation to", phraseTrans: "有義務做..." },
+        { tag: "Day 02", word: "Authorize", pos: "v.", meaning: "授權、批准", phrase: "be authorized by", phraseTrans: "經由...授權" },
+        { tag: "Day 02", word: "Prohibit", pos: "v.", meaning: "禁止", phrase: "prohibit ... from", phraseTrans: "禁止某人做某事" },
+        { tag: "Day 02", word: "Abolish", pos: "v.", meaning: "廢除", phrase: "abolish taxes", phraseTrans: "廢除稅收" },
+        { tag: "Day 02", word: "Enforce", pos: "v.", meaning: "執行、實施", phrase: "enforce the policy", phraseTrans: "執行政策" },
+        { tag: "Day 02", word: "Habit", pos: "n.", meaning: "習慣", phrase: "regular habit", phraseTrans: "規律的習慣" },
+        { tag: "Day 02", word: "Legislation", pos: "n.", meaning: "立法、法律", phrase: "vote for the legislation", phraseTrans: "投票支持該法案" },
+        { tag: "Day 02", word: "Restrict", pos: "v.", meaning: "限制", phrase: "access is restricted to", phraseTrans: "進入權僅限於..." },
+
+        // --- Day 03: General Business ---
+        { tag: "Day 03", word: "Accustomed", pos: "adj.", meaning: "習慣的", phrase: "be accustomed to", phraseTrans: "習慣於..." },
+        { tag: "Day 03", word: "Corporation", pos: "n.", meaning: "股份公司、法人", phrase: "multinational corporation", phraseTrans: "跨國公司" },
+        { tag: "Day 03", word: "Demanding", pos: "adj.", meaning: "要求苛刻的", phrase: "demanding supervisor", phraseTrans: "要求嚴格的主管" },
+        { tag: "Day 03", word: "Colleague", pos: "n.", meaning: "同事", phrase: "cooperation among colleagues", phraseTrans: "同事間的合作" },
+        { tag: "Day 03", word: "Division", pos: "n.", meaning: "部門", phrase: "automobile division", phraseTrans: "汽車部門" },
+        { tag: "Day 03", word: "Request", pos: "n./v.", meaning: "要求、請求", phrase: "upon request", phraseTrans: "一經要求/收到請求時" },
+        { tag: "Day 03", word: "Efficiently", pos: "adv.", meaning: "有效率地", phrase: "work more efficiently", phraseTrans: "更有效率地工作" },
+        { tag: "Day 03", word: "Manage", pos: "v.", meaning: "管理；設法做到", phrase: "manage to do", phraseTrans: "設法完成..." },
+        { tag: "Day 03", word: "Submit", pos: "v.", meaning: "提交", phrase: "submit a resume", phraseTrans: "提交履歷表" },
+        { tag: "Day 03", word: "Directly", pos: "adv.", meaning: "直接地", phrase: "report directly to", phraseTrans: "直接向...匯報" },
+        { tag: "Day 03", word: "Remind", pos: "v.", meaning: "提醒", phrase: "remind ... of", phraseTrans: "提醒某人關於..." },
+        { tag: "Day 03", word: "Instruct", pos: "v.", meaning: "指示、教導", phrase: "instruct the staff to", phraseTrans: "指示員工去..." },
+        { tag: "Day 03", word: "Deadline", pos: "n.", meaning: "截止期限", phrase: "ahead of the deadline", phraseTrans: "在截止期限前" },
+        { tag: "Day 03", word: "Sample", pos: "n.", meaning: "樣品、試用品", phrase: "prepare samples", phraseTrans: "準備樣品" },
+        { tag: "Day 03", word: "Notify", pos: "v.", meaning: "通知", phrase: "notify their supervisors", phraseTrans: "通知他們的主管" },
+        { tag: "Day 03", word: "Perform", pos: "v.", meaning: "執行、實施", phrase: "perform work/repairs", phraseTrans: "執行工作/維修" },
+        { tag: "Day 03", word: "Monitor", pos: "v.", meaning: "監控", phrase: "monitor progress", phraseTrans: "監控進度" },
+        { tag: "Day 03", word: "Deserve", pos: "v.", meaning: "值得、應得", phrase: "deserve the award", phraseTrans: "應得該獎項" },
+        { tag: "Day 03", word: "Assignment", pos: "n.", meaning: "工作、任務", phrase: "take the assignment", phraseTrans: "接受任務" },
+        { tag: "Day 03", word: "Entire", pos: "adj.", meaning: "整個的", phrase: "entire team", phraseTrans: "整個團隊" },
+        { tag: "Day 03", word: "Release", pos: "v./n.", meaning: "發表、公開", phrase: "release annual report", phraseTrans: "發布年度報告" },
+        { tag: "Day 03", word: "Extension", pos: "n.", meaning: "延長；分機", phrase: "grant an extension", phraseTrans: "准許延長期限" },
+        { tag: "Day 03", word: "Electronically", pos: "adv.", meaning: "以電子方式", phrase: "send invoices electronically", phraseTrans: "以電子方式發送發票" },
+        { tag: "Day 03", word: "Attendance", pos: "n.", meaning: "出勤", phrase: "attendance records", phraseTrans: "出勤紀錄" },
+        { tag: "Day 03", word: "Absolutely", pos: "adv.", meaning: "絕對地", phrase: "absolutely necessary", phraseTrans: "絕對必要" },
+        { tag: "Day 03", word: "Delegate", pos: "v.", meaning: "委任；[n.]代表", phrase: "delegate responsibilities", phraseTrans: "委派職責" },
+        { tag: "Day 03", word: "Attentively", pos: "adv.", meaning: "專心地", phrase: "listen attentively", phraseTrans: "專心地聽" },
+        { tag: "Day 03", word: "Supervision", pos: "n.", meaning: "監督", phrase: "close supervision", phraseTrans: "密切監督" },
+        { tag: "Day 03", word: "Workshop", pos: "n.", meaning: "研討會", phrase: "speak at the workshop", phraseTrans: "在研討會上發言" },
+        { tag: "Day 03", word: "Draw", pos: "v.", meaning: "拉、吸引", phrase: "draw employees", phraseTrans: "吸引員工" },
+        { tag: "Day 03", word: "Revision", pos: "n.", meaning: "修訂", phrase: "make revisions to", phraseTrans: "對...做出修訂" },
+        { tag: "Day 03", word: "Reluctantly", pos: "adv.", meaning: "不情願地", phrase: "reluctantly agreed", phraseTrans: "不情願地同意" },
+        { tag: "Day 03", word: "Acquaint", pos: "v.", meaning: "使熟悉", phrase: "acquaint ... with", phraseTrans: "使...熟悉..." },
+        { tag: "Day 03", word: "Convey", pos: "v.", meaning: "傳達", phrase: "convey the message to", phraseTrans: "傳達訊息給..." },
+        { tag: "Day 03", word: "Check", pos: "v.", meaning: "檢查、確認", phrase: "check for errors", phraseTrans: "檢查錯誤" },
+        { tag: "Day 03", word: "Headquarters", pos: "n.", meaning: "總部", phrase: "company headquarters", phraseTrans: "公司總部" },
+        { tag: "Day 03", word: "File", pos: "v.", meaning: "歸檔；提出", phrase: "file a claim", phraseTrans: "提出索賠申請" },
+        { tag: "Day 03", word: "Oversee", pos: "v.", meaning: "監督", phrase: "oversee the process", phraseTrans: "監督過程" },
+        { tag: "Day 03", word: "Involved", pos: "adj.", meaning: "有關的、涉及的", phrase: "be involved in", phraseTrans: "參與.../與...有關" },
+        { tag: "Day 03", word: "Concentrate", pos: "v.", meaning: "集中、專注", phrase: "concentrate on", phraseTrans: "專注於..." },
+
+        // --- Day 04: Office Tasks ---
+        { tag: "Day 04", word: "Lax", pos: "adj.", meaning: "鬆散的、散漫的", phrase: "be lax in", phraseTrans: "在...方面很鬆散" },
+        { tag: "Day 04", word: "Procrastinate", pos: "v.", meaning: "拖延", phrase: "procrastinate with", phraseTrans: "拖延某事" },
+        { tag: "Day 04", word: "Combined", pos: "adj.", meaning: "聯合的、結合的", phrase: "combined experience", phraseTrans: "合計經驗" },
+        { tag: "Day 04", word: "Accomplish", pos: "v.", meaning: "達成", phrase: "accomplish goals", phraseTrans: "達成目標" },
+        { tag: "Day 04", word: "Voluntarily", pos: "adv.", meaning: "自願地", phrase: "voluntarily take on", phraseTrans: "自願承擔" },
+        { tag: "Day 04", word: "Undertake", pos: "v.", meaning: "從事、承擔", phrase: "undertake the task", phraseTrans: "承擔任務" },
+        { tag: "Day 04", word: "Assume", pos: "v.", meaning: "假定；承擔", phrase: "assume responsibility", phraseTrans: "承擔責任" },
+        { tag: "Day 04", word: "Occasionally", pos: "adv.", meaning: "偶爾", phrase: "occasionally take time", phraseTrans: "偶爾花點時間" },
+        { tag: "Day 04", word: "Employee", pos: "n.", meaning: "員工", phrase: "employees working under...", phraseTrans: "在...手下工作的員工" },
+        { tag: "Day 04", word: "Assist", pos: "v.", meaning: "協助", phrase: "assist with", phraseTrans: "協助處理..." },
+        { tag: "Day 04", word: "Satisfied", pos: "adj.", meaning: "滿意的", phrase: "be satisfied with", phraseTrans: "對...感到滿意" },
+        { tag: "Day 04", word: "Manner", pos: "n.", meaning: "方式；態度", phrase: "in a manner", phraseTrans: "以一種...的態度/方式" },
+        { tag: "Day 04", word: "Responsible", pos: "adj.", meaning: "負責任的", phrase: "be responsible for", phraseTrans: "對...負責" },
+        { tag: "Day 04", word: "Conduct", pos: "v.", meaning: "進行、執行", phrase: "conduct research", phraseTrans: "進行研究" },
+        { tag: "Day 04", word: "Adjust", pos: "v.", meaning: "調整、適應", phrase: "adjust to", phraseTrans: "適應..." },
+        { tag: "Day 04", word: "Personnel", pos: "n.", meaning: "人員；人事部", phrase: "temporary personnel", phraseTrans: "臨時人員" },
+        { tag: "Day 04", word: "Agree", pos: "v.", meaning: "同意", phrase: "agree on", phraseTrans: "對...達成協議/同意" },
+        { tag: "Day 04", word: "Supervise", pos: "v.", meaning: "監督", phrase: "supervise the employees", phraseTrans: "監督員工" },
+        { tag: "Day 04", word: "Co-worker", pos: "n.", meaning: "同事", phrase: "co-workers", phraseTrans: "同事" },
+        { tag: "Day 04", word: "Direct", pos: "v.", meaning: "引導、指路", phrase: "direct new employees to", phraseTrans: "引導新員工到..." },
+        { tag: "Day 04", word: "Confidential", pos: "adj.", meaning: "機密的", phrase: "keep confidential", phraseTrans: "保持機密" },
+        { tag: "Day 04", word: "Assign", pos: "v.", meaning: "分配、指派", phrase: "assign desks", phraseTrans: "分配座位" },
+        { tag: "Day 04", word: "Leading", pos: "adj.", meaning: "領導的、領先的", phrase: "leading exporter", phraseTrans: "領先的出口商" },
+        { tag: "Day 04", word: "Formal", pos: "adj.", meaning: "正式的", phrase: "formal business attire", phraseTrans: "正式商務服裝" },
+        { tag: "Day 04", word: "Remove", pos: "v.", meaning: "去除、免職", phrase: "remove from position", phraseTrans: "免除職位" },
+        { tag: "Day 04", word: "Collect", pos: "v.", meaning: "收集", phrase: "collect ideas", phraseTrans: "收集想法" },
+        { tag: "Day 04", word: "Coordinate", pos: "v.", meaning: "協調", phrase: "coordinate the planning", phraseTrans: "協調計畫" },
+        { tag: "Day 04", word: "Hardly", pos: "adv.", meaning: "幾乎不", phrase: "hardly ever", phraseTrans: "幾乎從不" },
+        { tag: "Day 04", word: "Abstract", pos: "adj.", meaning: "抽象的", phrase: "abstract ideals", phraseTrans: "抽象的理念" },
+        { tag: "Day 04", word: "Directory", pos: "n.", meaning: "通訊錄", phrase: "company directory", phraseTrans: "公司通訊錄" },
+        { tag: "Day 04", word: "Accountable", pos: "adj.", meaning: "應負責任的", phrase: "be accountable for", phraseTrans: "對...負有責任" },
+        { tag: "Day 04", word: "Skillfully", pos: "adv.", meaning: "巧妙地、熟練地", phrase: "skillfully edited", phraseTrans: "熟練地編輯" },
+        { tag: "Day 04", word: "Exclusive", pos: "adj.", meaning: "獨有的、排外的", phrase: "exclusive access", phraseTrans: "獨有的進入權" },
+        { tag: "Day 04", word: "Intention", pos: "n.", meaning: "意圖、意向", phrase: "intention of", phraseTrans: "...的意圖" },
+        { tag: "Day 04", word: "Transform", pos: "v.", meaning: "改變、轉變", phrase: "transform the way", phraseTrans: "改變...的方式" },
+        { tag: "Day 04", word: "Respectful", pos: "adj.", meaning: "尊重的", phrase: "be respectful to", phraseTrans: "對...表示尊重" },
+        { tag: "Day 04", word: "Duplicate", pos: "n.", meaning: "副本", phrase: "a duplicate of", phraseTrans: "...的副本" },
+        { tag: "Day 04", word: "Contrary", pos: "n.", meaning: "相反", phrase: "claims to the contrary", phraseTrans: "相反的說法" },
+        { tag: "Day 04", word: "Disturbing", pos: "adj.", meaning: "令人不安的", phrase: "find ... disturbing", phraseTrans: "覺得...令人不安" },
+        { tag: "Day 04", word: "Engage", pos: "v.", meaning: "參加、從事", phrase: "engage in", phraseTrans: "參加/從事..." },
+        { tag: "Day 04", word: "Foster", pos: "v.", meaning: "促進、培養", phrase: "foster better relations", phraseTrans: "促進更好的關係" },
+        { tag: "Day 04", word: "Neutrality", pos: "n.", meaning: "中立", phrase: "display neutrality", phraseTrans: "展現中立" },
+        { tag: "Day 04", word: "Widely", pos: "adv.", meaning: "廣泛地", phrase: "widely admired", phraseTrans: "廣受欽佩" }
     ];
 
     // ================= STATE =================
     let currentData = [];
     let currentIndex = 0;
-    // 從 LocalStorage 讀取紀錄，如果沒有則建立空物件
     let progressStore = JSON.parse(localStorage.getItem('vocabProgress')) || {};
 
     // ================= UI ELEMENTS =================
@@ -376,13 +486,10 @@
     const progressText = document.getElementById('progressText');
     const statusFeedback = document.getElementById('statusFeedback');
     const modeSelect = document.getElementById('modeSelect');
-    const prevBtn = document.querySelector('.nav-btn:first-child');
-    const nextBtn = document.querySelector('.nav-btn:last-child');
 
-    // ================= INIT =================
+    // ================= LOGIC =================
     function init() {
-        changeMode(); // 載入預設資料
-        // 鍵盤監聽
+        changeMode();
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') changeCard(-1);
             if (e.key === 'ArrowRight') changeCard(1);
@@ -390,64 +497,22 @@
         });
     }
 
-    // ================= LOGIC =================
-
-    // 儲存狀態
-    function markStatus(status) {
-        if (currentData.length === 0) return;
-        const word = currentData[currentIndex].word;
-        
-        // 更新記憶體
-        progressStore[word] = status;
-        
-        // 寫入硬碟 (localStorage)
-        localStorage.setItem('vocabProgress', JSON.stringify(progressStore));
-        
-        // UI 更新
-        renderList(); // 更新列表的顏色點
-        updateStatusFeedback(status);
-        
-        // 自動跳下一題 (可選，這裡設為延遲 0.3秒跳轉)
-        setTimeout(() => {
-            changeCard(1);
-        }, 300);
-    }
-
-    // 重置進度
-    function resetProgress() {
-        if(confirm("確定要清除所有學習紀錄嗎？")) {
-            progressStore = {};
-            localStorage.removeItem('vocabProgress');
-            renderList();
-            updateStatusFeedback(null);
-            alert("已重置！");
-        }
-    }
-
-    // 切換模式 (篩選邏輯)
     function changeMode() {
         const mode = modeSelect.value;
         const all = fullVocabData;
 
         if (mode === 'All') {
             currentData = all;
-        } else if (mode === 'Day 01') {
-            currentData = all.filter(item => item.tag === 'Day 01');
-        } else if (mode === 'Day 02') {
-            currentData = all.filter(item => item.tag === 'Day 02');
+        } else if (mode.startsWith('Day')) {
+            currentData = all.filter(item => item.tag === mode);
         } else if (mode === 'Review-Hard') {
             currentData = all.filter(item => progressStore[item.word] === 'hard');
         } else if (mode === 'Review-Medium') {
             currentData = all.filter(item => progressStore[item.word] === 'medium');
-        } else if (mode === 'Review-Review') {
-            currentData = all.filter(item => 
-                progressStore[item.word] === 'hard' || progressStore[item.word] === 'medium'
-            );
         }
 
         if (currentData.length === 0) {
-            alert("目前沒有符合這個分類的單字喔！(例如：你還沒有標記任何『不熟』的單字)");
-            // 如果沒資料，切回全部，避免壞掉
+            alert("目前沒有符合的單字 (例如：尚未標記不熟)");
             modeSelect.value = 'All';
             currentData = all;
         }
@@ -457,11 +522,10 @@
         loadCard(0);
     }
 
-    // 渲染左側清單
     function renderList() {
         wordListEl.innerHTML = '';
         currentData.forEach((item, index) => {
-            const status = progressStore[item.word]; // 讀取該字的狀態
+            const status = progressStore[item.word];
             let dotClass = '';
             if (status === 'hard') dotClass = 'hard';
             else if (status === 'medium') dotClass = 'medium';
@@ -471,7 +535,6 @@
             div.className = `word-item ${index === currentIndex ? 'active' : ''}`;
             div.onclick = () => loadCard(index);
             
-            // 組合 HTML：圓點 + 單字
             div.innerHTML = `
                 <div style="display:flex; align-items:center;">
                     <span class="status-dot ${dotClass}"></span>
@@ -483,14 +546,10 @@
         scrollToActive();
     }
 
-    // 載入卡片
     function loadCard(index) {
         if (currentData.length === 0) return;
-        
-        // 循環或邊界檢查
         if (index < 0) index = 0;
-        if (index >= currentData.length) index = currentData.length - 1; // 停在最後一張
-        // 如果想要循環： if (index >= currentData.length) index = 0;
+        if (index >= currentData.length) index = currentData.length - 1;
 
         currentIndex = index;
         const item = currentData[index];
@@ -498,15 +557,16 @@
         document.getElementById('cardWord').innerText = item.word;
         document.getElementById('cardPos').innerText = item.pos;
         document.getElementById('cardMeaning').innerText = item.meaning;
-        document.getElementById('cardSentence').innerText = `"${item.sentence}"`;
+        
+        // 慣用語部分
+        document.getElementById('cardPhrase').innerText = item.phrase;
+        document.getElementById('cardPhraseTrans').innerText = `(${item.phraseTrans})`;
+
         progressText.innerText = `${currentIndex + 1} / ${currentData.length}`;
 
         flashcardEl.classList.remove('flipped');
-        
-        // 更新當前卡片的狀態顯示
         updateStatusFeedback(progressStore[item.word]);
 
-        // Highlight List Item
         const items = document.querySelectorAll('.word-item');
         items.forEach(el => el.classList.remove('active'));
         if (items[currentIndex]) items[currentIndex].classList.add('active');
@@ -514,32 +574,41 @@
         scrollToActive();
     }
 
-    function updateStatusFeedback(status) {
-        if (status === 'hard') {
-            statusFeedback.innerHTML = "<span style='color:var(--status-hard)'>🔴 需加強 (Hard)</span>";
-        } else if (status === 'medium') {
-            statusFeedback.innerHTML = "<span style='color:var(--status-medium)'>🟡 普通 (Medium)</span>";
-        } else if (status === 'easy') {
-            statusFeedback.innerHTML = "<span style='color:var(--status-easy)'>🟢 已熟悉 (Easy)</span>";
-        } else {
-            statusFeedback.innerHTML = "尚未評分";
+    function markStatus(status) {
+        if (currentData.length === 0) return;
+        const word = currentData[currentIndex].word;
+        progressStore[word] = status;
+        localStorage.setItem('vocabProgress', JSON.stringify(progressStore));
+        
+        renderList();
+        updateStatusFeedback(status);
+        setTimeout(() => changeCard(1), 300);
+    }
+
+    function resetProgress() {
+        if(confirm("確定要清除所有紀錄嗎？")) {
+            progressStore = {};
+            localStorage.removeItem('vocabProgress');
+            renderList();
+            updateStatusFeedback(null);
+            alert("已重置！");
         }
+    }
+
+    function updateStatusFeedback(status) {
+        if (status === 'hard') statusFeedback.innerHTML = "<span style='color:var(--status-hard)'>🔴 需加強</span>";
+        else if (status === 'medium') statusFeedback.innerHTML = "<span style='color:var(--status-medium)'>🟡 普通</span>";
+        else if (status === 'easy') statusFeedback.innerHTML = "<span style='color:var(--status-easy)'>🟢 熟悉</span>";
+        else statusFeedback.innerHTML = "";
     }
 
     function scrollToActive() {
         const activeItem = document.querySelector('.word-item.active');
-        if (activeItem) {
-            activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+        if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function changeCard(direction) {
-        loadCard(currentIndex + direction);
-    }
-
-    function toggleFlip() {
-        flashcardEl.classList.toggle('flipped');
-    }
+    function changeCard(direction) { loadCard(currentIndex + direction); }
+    function toggleFlip() { flashcardEl.classList.toggle('flipped'); }
 
     // Start
     init();
