@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>單字記憶特訓班 (Pro版)</title>
+<style>
+    :root {
+        --primary-color: #6a8caf;
+        --bg-color: #f7f9fc;
+        --card-height: 280px;
+        --status-hard: #e53e3e;   /* 紅 */
+        --status-medium: #d69e2e; /* 黃 */
+        --status-easy: #38a169;   /* 綠 */
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--bg-color);
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* --- Header --- */
+    header {
+        background-color: white;
+        padding: 10px 15px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    header h2 { margin: 0; color: var(--primary-color); font-size: 1.2rem; }
+    
+    .filter-bar {
+        display: flex;
+        gap: 10px;
+    }
+
+    select.mode-selector {
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e0;
+        background-color: #f8fafc;
+        font-size: 0.95rem;
+        flex: 1;
+    }
+
+    /* --- Main Layout --- */
+    .main-container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    /* --- List Panel (Left) --- */
+    .list-panel {
+        width: 280px;
+        background-color: white;
+        border-right: 1px solid #e2e8f0;
+        overflow-y: auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .word-item {
+        padding: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff;
+        border: 1px solid #edf2f7;
+    }
+
+    .word-item:hover { background-color: #f7fafc; }
+    .word-item.active { background-color: #ebf8ff; border-left-color: var(--primary-color); border-color: #bee3f8; }
+
+    /* 列表中的狀態小圓點 */
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #cbd5e0; /* 預設灰 */
+        display: inline-block;
+        margin-right: 8px;
+    }
+    .status-dot.hard { background-color: var(--status-hard); }
+    .status-dot.medium { background-color: var(--status-medium); }
+    .status-dot.easy { background-color: var(--status-easy); }
+
+    /* --- Card Panel (Right) --- */
+    .card-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        background-color: var(--bg-color);
+        position: relative;
+    }
+
+    /* 狀態回饋條 (在卡片上方顯示當前狀態) */
+    .status-feedback {
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #718096;
+        height: 20px;
+    }
+
+    /* Flip Card */
+    .flip-card {
+        background-color: transparent;
+        width: 100%;
+        max-width: 380px;
+        height: var(--card-height);
+        perspective: 1000px;
+        cursor: pointer;
+        margin-bottom: 15px;
+    }
+
+    .flip-card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        transition: transform 0.5s;
+        transform-style: preserve-3d;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        border-radius: 16px;
+    }
+
+    .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+
+    .flip-card-front, .flip-card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .flip-card-front { background: linear-gradient(135deg, #6a8caf 0%, #5a7c9f 100%); color: white; }
+    .flip-card-back { background-color: white; color: #2d3748; transform: rotateY(180deg); border: 1px solid #e2e8f0; }
+
+    .main-word { font-size: 2rem; font-weight: 700; margin-bottom: 5px; }
+    .meaning { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 10px; }
+    .sentence { font-size: 1rem; color: #666; font-style: italic; border-top: 1px solid #eee; padding-top: 15px; width: 100%; }
+
+    /* --- Rating Buttons (評分按鈕) --- */
+    .rating-area {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        max-width: 380px;
+        margin-bottom: 15px;
+    }
+
+    .rate-btn {
+        flex: 1;
+        border: none;
+        padding: 12px 5px;
+        border-radius: 12px;
+        font-weight: bold;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.1s;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .rate-btn:active { transform: scale(0.95); }
+    
+    .btn-hard { background-color: var(--status-hard); }
+    .btn-medium { background-color: var(--status-medium); }
+    .btn-easy { background-color: var(--status-easy); }
+
+    /* Navigation Buttons */
+    .nav-buttons {
+        display: flex;
+        gap: 20px;
+        width: 100%;
+        max-width: 380px;
+    }
+    .nav-btn {
+        flex: 1;
+        background: white;
+        border: 1px solid #cbd5e0;
+        padding: 10px;
+        border-radius: 30px;
+        cursor: pointer;
+    }
+
+    /* RWD */
+    @media (max-width: 768px) {
+        .main-container { flex-direction: column; }
+        .card-panel { order: 1; padding: 10px; border-bottom: 1px solid #ddd; flex: 0 0 auto; }
+        .list-panel { order: 2; width: 100%; flex: 1; }
+        .flip-card { height: 240px; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-top">
+        <h2>單字特訓 Pro</h2>
+        <div style="font-size:0.9rem; color:#666;" id="progressText">0/0</div>
+    </div>
+    <div class="filter-bar">
+        <select class="mode-selector" id="modeSelect" onchange="changeMode()">
+            <option value="All">📚 全部單字</option>
+            <option value="Day 01">📱 Day 01：求職篇</option>
+            <option value="Day 02">🏢 Day 02：規矩篇</option>
+            <option disabled>──────────</option>
+            <option value="Review-Hard">🔴 只複習「不熟」的字</option>
+            <option value="Review-Medium">🟡 只複習「普通」的字</option>
+            <option value="Review-Review">🔥 複習「不熟 + 普通」</option>
+        </select>
+        <button onclick="resetProgress()" style="padding:0 10px; border:1px solid #ccc; border-radius:8px; background:#fff;">重置</button>
+    </div>
+</header>
+
+<div class="main-container">
+    <div class="list-panel" id="wordList"></div>
+
+    <div class="card-panel">
+        <div class="status-feedback" id="statusFeedback"></div>
+        
+        <div class="flip-card" id="flashcard" onclick="toggleFlip()">
+            <div class="flip-card-inner">
+                <div class="flip-card-front">
+                    <div class="main-word" id="cardWord">Word</div>
+                    <div style="opacity:0.8" id="cardPos">n.</div>
+                    <div style="font-size:0.8rem; margin-top:20px; opacity:0.6;">點擊翻面</div>
+                </div>
+                <div class="flip-card-back">
+                    <div class="meaning" id="cardMeaning">意思</div>
+                    <div class="sentence" id="cardSentence">例句</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rating-area">
+            <button class="rate-btn btn-hard" onclick="markStatus('hard')">🔴 不熟</button>
+            <button class="rate-btn btn-medium" onclick="markStatus('medium')">🟡 普通</button>
+            <button class="rate-btn btn-easy" onclick="markStatus('easy')">🟢 熟悉</button>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="changeCard(-1)">← 上一個</button>
+            <button class="nav-btn" onclick="changeCard(1)">下一個 →</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================= DATA =================
+    const fullVocabData = [
+        // --- Day 01 ---
+        { tag: "Day 01", word: "Resume", pos: "n.", meaning: "履歷表", sentence: "Submit a resume to apply for the job." },
+        { tag: "Day 01", word: "Opening", pos: "n.", meaning: "職缺、空缺", sentence: "There are several job openings now." },
+        { tag: "Day 01", word: "Applicant", pos: "n.", meaning: "申請人", sentence: "Applicants are required to provide ID." },
+        { tag: "Day 01", word: "Requirement", pos: "n.", meaning: "必要條件", sentence: "You must meet all the requirements." },
+        { tag: "Day 01", word: "Meet", pos: "v.", meaning: "滿足、符合", sentence: "Does your skill set meet the needs?" },
+        { tag: "Day 01", word: "Qualified", pos: "adj.", meaning: "有資格的", sentence: "She is highly qualified for the position." },
+        { tag: "Day 01", word: "Candidate", pos: "n.", meaning: "候選人", sentence: "We selected three candidates." },
+        { tag: "Day 01", word: "Confidence", pos: "n.", meaning: "信心", sentence: "Show confidence during the interview." },
+        { tag: "Day 01", word: "Highly", pos: "adv.", meaning: "很、非常", sentence: "He is a highly respected manager." },
+        { tag: "Day 01", word: "Professional", pos: "adj.", meaning: "專業的", sentence: "Please wear professional attire." },
+        { tag: "Day 01", word: "Interview", pos: "n./v.", meaning: "面試", sentence: "We will hold interviews next week." },
+        { tag: "Day 01", word: "Hire", pos: "v.", meaning: "雇用", sentence: "They plan to hire new employees." },
+        { tag: "Day 01", word: "Training", pos: "n.", meaning: "訓練", sentence: "The company provides on-the-job training." },
+        { tag: "Day 01", word: "Reference", pos: "n.", meaning: "推薦信、參考", sentence: "Please attach a reference letter." },
+        { tag: "Day 01", word: "Position", pos: "n.", meaning: "職位", sentence: "I applied for the advertised position." },
+        { tag: "Day 01", word: "Achievement", pos: "n.", meaning: "成就", sentence: "List your achievements on the resume." },
+        { tag: "Day 01", word: "Impressed", pos: "adj.", meaning: "印象深刻的", sentence: "I was impressed by his skills." },
+        { tag: "Day 01", word: "Excellent", pos: "adj.", meaning: "優秀的", sentence: "She has excellent managerial skills." },
+        { tag: "Day 01", word: "Eligible", pos: "adj.", meaning: "有資格的", sentence: "Who is eligible for the bonus?" },
+        { tag: "Day 01", word: "Identify", pos: "v.", meaning: "識別、認出", sentence: "The badge makes you easy to identify." },
+        { tag: "Day 01", word: "Associate", pos: "v.", meaning: "使有關聯", sentence: "The brand is associated with quality." },
+        { tag: "Day 01", word: "Condition", pos: "n.", meaning: "條件", sentence: "Terms and conditions of employment." },
+        { tag: "Day 01", word: "Employment", pos: "n.", meaning: "雇用", sentence: "Looking for employment opportunities." },
+        { tag: "Day 01", word: "Lack", pos: "v./n.", meaning: "缺乏", sentence: "He lacks the necessary experience." },
+        { tag: "Day 01", word: "Managerial", pos: "adj.", meaning: "管理的", sentence: "He is seeking a managerial position." },
+        { tag: "Day 01", word: "Diligent", pos: "adj.", meaning: "勤勉的", sentence: "Diligent workers are rewarded." },
+        { tag: "Day 01", word: "Familiar", pos: "adj.", meaning: "熟悉的", sentence: "Become familiar with the rules." },
+        { tag: "Day 01", word: "Proficiency", pos: "n.", meaning: "精通", sentence: "Show proof of proficiency in English." },
+        { tag: "Day 01", word: "Prospective", pos: "adj.", meaning: "預期的", sentence: "Meeting with prospective clients." },
+        { tag: "Day 01", word: "Appeal", pos: "v.", meaning: "吸引", sentence: "The offer appeals to the staff." },
+        { tag: "Day 01", word: "Specialize", pos: "v.", meaning: "專攻", sentence: "We specialize in web design." },
+        { tag: "Day 01", word: "Apprehensive", pos: "adj.", meaning: "憂慮的", sentence: "I feel apprehensive about the test." },
+        { tag: "Day 01", word: "Consultant", pos: "n.", meaning: "顧問", sentence: "We hired a design consultant." },
+        { tag: "Day 01", word: "Entitle", pos: "v.", meaning: "給...權利", sentence: "You are entitled to a refund." },
+        { tag: "Day 01", word: "Degree", pos: "n.", meaning: "學位", sentence: "He has a bachelor's degree." },
+        { tag: "Day 01", word: "Payroll", pos: "n.", meaning: "薪水帳冊", sentence: "You are now on the payroll." },
+        { tag: "Day 01", word: "Recruit", pos: "v.", meaning: "招募", sentence: "They recruit promising graduates." },
+        { tag: "Day 01", word: "Certification", pos: "n.", meaning: "證照", sentence: "Obtain certification before working." },
+        { tag: "Day 01", word: "Occupation", pos: "n.", meaning: "職業", sentence: "It is a challenging occupation." },
+        { tag: "Day 01", word: "Wage", pos: "n.", meaning: "工資", sentence: "Workers want to earn higher wages." },
+        // --- Day 02 ---
+        { tag: "Day 02", word: "Attire", pos: "n.", meaning: "服裝", sentence: "Wear professional business attire." },
+        { tag: "Day 02", word: "Code", pos: "n.", meaning: "規範", sentence: "Follow the company dress code." },
+        { tag: "Day 02", word: "Concern", pos: "n.", meaning: "擔憂", sentence: "Voice your concerns to the manager." },
+        { tag: "Day 02", word: "Policy", pos: "n.", meaning: "政策", sentence: "Read the insurance policy carefully." },
+        { tag: "Day 02", word: "Comply", pos: "v.", meaning: "遵守", sentence: "You must comply with the rules." },
+        { tag: "Day 02", word: "Regulation", pos: "n.", meaning: "規定", sentence: "Safety regulations are strict here." },
+        { tag: "Day 02", word: "Exception", pos: "n.", meaning: "例外", sentence: "We cannot make exceptions for anyone." },
+        { tag: "Day 02", word: "Adhere", pos: "v.", meaning: "遵守", sentence: "Adhere to the safety guidelines." },
+        { tag: "Day 02", word: "Severely", pos: "adv.", meaning: "嚴格地", sentence: "Violators will be severely punished." },
+        { tag: "Day 02", word: "Refrain", pos: "v.", meaning: "克制", sentence: "Please refrain from smoking here." },
+        { tag: "Day 02", word: "Permission", pos: "n.", meaning: "許可", sentence: "Get permission before leaving early." },
+        { tag: "Day 02", word: "Access", pos: "n.", meaning: "進入權", sentence: "Only staff can gain access to the lab." },
+        { tag: "Day 02", word: "Thoroughly", pos: "adv.", meaning: "徹底地", sentence: "Read the contract thoroughly." },
+        { tag: "Day 02", word: "Revise", pos: "v.", meaning: "修訂", sentence: "The policies have been revised." },
+        { tag: "Day 02", word: "Approach", pos: "n.", meaning: "方法", sentence: "We take a strict approach to safety." },
+        { tag: "Day 02", word: "Approval", pos: "n.", meaning: "批准", sentence: "Obtain approval from your boss." },
+        { tag: "Day 02", word: "Form", pos: "n.", meaning: "形式", sentence: "A driver's license is a form of ID." },
+        { tag: "Day 02", word: "Immediately", pos: "adv.", meaning: "立即", sentence: "The rule is effective immediately." },
+        { tag: "Day 02", word: "Inspection", pos: "n.", meaning: "檢查", sentence: "Conduct a safety inspection." },
+        { tag: "Day 02", word: "Arrangement", pos: "n.", meaning: "安排", sentence: "Make arrangements for the meeting." },
+        { tag: "Day 02", word: "Procedure", pos: "n.", meaning: "程序", sentence: "Follow the standard procedure." },
+        { tag: "Day 02", word: "Negative", pos: "adj.", meaning: "負面的", sentence: "Avoid negative feedback." },
+        { tag: "Day 02", word: "Mandate", pos: "v.", meaning: "命令、授權", sentence: "The law mandates equal pay." },
+        { tag: "Day 02", word: "Effect", pos: "n.", meaning: "效力", sentence: "The law is currently in effect." },
+        { tag: "Day 02", word: "Drastically", pos: "adv.", meaning: "大幅地", sentence: "Prices increased drastically." },
+        { tag: "Day 02", word: "According to", pos: "phr.", meaning: "根據", sentence: "According to the new guidelines..." },
+        { tag: "Day 02", word: "Enable", pos: "v.", meaning: "使...能夠", sentence: "This tool enables us to work faster." },
+        { tag: "Day 02", word: "Standard", pos: "n.", meaning: "標準", sentence: "We meet high safety standards." },
+        { tag: "Day 02", word: "Constant", pos: "adj.", meaning: "持續的", sentence: "Constant noise can be annoying." },
+        { tag: "Day 02", word: "Act", pos: "n.", meaning: "法案", sentence: "Congress passed the new act." },
+        { tag: "Day 02", word: "Compensation", pos: "n.", meaning: "報酬", sentence: "Receive fair compensation for work." },
+        { tag: "Day 02", word: "Ban", pos: "n./v.", meaning: "禁止", sentence: "They placed a ban on cellphones." },
+        { tag: "Day 02", word: "Obligation", pos: "n.", meaning: "義務", sentence: "We have an obligation to pay tax." },
+        { tag: "Day 02", word: "Authorize", pos: "v.", meaning: "授權", sentence: "The payment was authorized." },
+        { tag: "Day 02", word: "Prohibit", pos: "v.", meaning: "禁止", sentence: "Smoking is prohibited here." },
+        { tag: "Day 02", word: "Abolish", pos: "v.", meaning: "廢除", sentence: "The old rule was abolished." },
+        { tag: "Day 02", word: "Enforce", pos: "v.", meaning: "執行", sentence: "Police enforce the traffic laws." },
+        { tag: "Day 02", word: "Habit", pos: "n.", meaning: "習慣", sentence: "Make punctuality a regular habit." },
+        { tag: "Day 02", word: "Legislation", pos: "n.", meaning: "立法", sentence: "Support the new legislation." },
+        { tag: "Day 02", word: "Restrict", pos: "v.", meaning: "限制", sentence: "Access is restricted to staff only." }
+    ];
+
+    // ================= STATE =================
+    let currentData = [];
+    let currentIndex = 0;
+    // 從 LocalStorage 讀取紀錄，如果沒有則建立空物件
+    let progressStore = JSON.parse(localStorage.getItem('vocabProgress')) || {};
+
+    // ================= UI ELEMENTS =================
+    const wordListEl = document.getElementById('wordList');
+    const flashcardEl = document.getElementById('flashcard');
+    const progressText = document.getElementById('progressText');
+    const statusFeedback = document.getElementById('statusFeedback');
+    const modeSelect = document.getElementById('modeSelect');
+    const prevBtn = document.querySelector('.nav-btn:first-child');
+    const nextBtn = document.querySelector('.nav-btn:last-child');
+
+    // ================= INIT =================
+    function init() {
+        changeMode(); // 載入預設資料
+        // 鍵盤監聽
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeCard(-1);
+            if (e.key === 'ArrowRight') changeCard(1);
+            if (e.key === ' ' || e.key === 'Enter') toggleFlip();
+        });
+    }
+
+    // ================= LOGIC =================
+
+    // 儲存狀態
+    function markStatus(status) {
+        if (currentData.length === 0) return;
+        const word = currentData[currentIndex].word;
+        
+        // 更新記憶體
+        progressStore[word] = status;
+        
+        // 寫入硬碟 (localStorage)
+        localStorage.setItem('vocabProgress', JSON.stringify(progressStore));
+        
+        // UI 更新
+        renderList(); // 更新列表的顏色點
+        updateStatusFeedback(status);
+        
+        // 自動跳下一題 (可選，這裡設為延遲 0.3秒跳轉)
+        setTimeout(() => {
+            changeCard(1);
+        }, 300);
+    }
+
+    // 重置進度
+    function resetProgress() {
+        if(confirm("確定要清除所有學習紀錄嗎？")) {
+            progressStore = {};
+            localStorage.removeItem('vocabProgress');
+            renderList();
+            updateStatusFeedback(null);
+            alert("已重置！");
+        }
+    }
+
+    // 切換模式 (篩選邏輯)
+    function changeMode() {
+        const mode = modeSelect.value;
+        const all = fullVocabData;
+
+        if (mode === 'All') {
+            currentData = all;
+        } else if (mode === 'Day 01') {
+            currentData = all.filter(item => item.tag === 'Day 01');
+        } else if (mode === 'Day 02') {
+            currentData = all.filter(item => item.tag === 'Day 02');
+        } else if (mode === 'Review-Hard') {
+            currentData = all.filter(item => progressStore[item.word] === 'hard');
+        } else if (mode === 'Review-Medium') {
+            currentData = all.filter(item => progressStore[item.word] === 'medium');
+        } else if (mode === 'Review-Review') {
+            currentData = all.filter(item => 
+                progressStore[item.word] === 'hard' || progressStore[item.word] === 'medium'
+            );
+        }
+
+        if (currentData.length === 0) {
+            alert("目前沒有符合這個分類的單字喔！(例如：你還沒有標記任何『不熟』的單字)");
+            // 如果沒資料，切回全部，避免壞掉
+            modeSelect.value = 'All';
+            currentData = all;
+        }
+
+        currentIndex = 0;
+        renderList();
+        loadCard(0);
+    }
+
+    // 渲染左側清單
+    function renderList() {
+        wordListEl.innerHTML = '';
+        currentData.forEach((item, index) => {
+            const status = progressStore[item.word]; // 讀取該字的狀態
+            let dotClass = '';
+            if (status === 'hard') dotClass = 'hard';
+            else if (status === 'medium') dotClass = 'medium';
+            else if (status === 'easy') dotClass = 'easy';
+
+            const div = document.createElement('div');
+            div.className = `word-item ${index === currentIndex ? 'active' : ''}`;
+            div.onclick = () => loadCard(index);
+            
+            // 組合 HTML：圓點 + 單字
+            div.innerHTML = `
+                <div style="display:flex; align-items:center;">
+                    <span class="status-dot ${dotClass}"></span>
+                    <span>${index + 1}. ${item.word}</span>
+                </div>
+            `;
+            wordListEl.appendChild(div);
+        });
+        scrollToActive();
+    }
+
+    // 載入卡片
+    function loadCard(index) {
+        if (currentData.length === 0) return;
+        
+        // 循環或邊界檢查
+        if (index < 0) index = 0;
+        if (index >= currentData.length) index = currentData.length - 1; // 停在最後一張
+        // 如果想要循環： if (index >= currentData.length) index = 0;
+
+        currentIndex = index;
+        const item = currentData[index];
+        
+        document.getElementById('cardWord').innerText = item.word;
+        document.getElementById('cardPos').innerText = item.pos;
+        document.getElementById('cardMeaning').innerText = item.meaning;
+        document.getElementById('cardSentence').innerText = `"${item.sentence}"`;
+        progressText.innerText = `${currentIndex + 1} / ${currentData.length}`;
+
+        flashcardEl.classList.remove('flipped');
+        
+        // 更新當前卡片的狀態顯示
+        updateStatusFeedback(progressStore[item.word]);
+
+        // Highlight List Item
+        const items = document.querySelectorAll('.word-item');
+        items.forEach(el => el.classList.remove('active'));
+        if (items[currentIndex]) items[currentIndex].classList.add('active');
+        
+        scrollToActive();
+    }
+
+    function updateStatusFeedback(status) {
+        if (status === 'hard') {
+            statusFeedback.innerHTML = "<span style='color:var(--status-hard)'>🔴 需加強 (Hard)</span>";
+        } else if (status === 'medium') {
+            statusFeedback.innerHTML = "<span style='color:var(--status-medium)'>🟡 普通 (Medium)</span>";
+        } else if (status === 'easy') {
+            statusFeedback.innerHTML = "<span style='color:var(--status-easy)'>🟢 已熟悉 (Easy)</span>";
+        } else {
+            statusFeedback.innerHTML = "尚未評分";
+        }
+    }
+
+    function scrollToActive() {
+        const activeItem = document.querySelector('.word-item.active');
+        if (activeItem) {
+            activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    function changeCard(direction) {
+        loadCard(currentIndex + direction);
+    }
+
+    function toggleFlip() {
+        flashcardEl.classList.toggle('flipped');
+    }
+
+    // Start
+    init();
+</script>
+
+</body>
+</html>
